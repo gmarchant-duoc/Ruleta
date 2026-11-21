@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Sortea el orden de exposición de tus alumnos con una ruleta.">
+<title>Ruleta de exposiciones · Duoc UC</title>
+<style>
+:root{--navy:#102e4f;--ink:#07172d;--gold:#ffca2f;font:16px/1.4 Arial,sans-serif;color:var(--ink);background:#eaf1f6}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:linear-gradient(100deg,#f6fbfceb,#e8f1f6c9 55%,#e6eff680),url("pasillo.png") right 52px / 26% 490px no-repeat,linear-gradient(135deg,#f6fafc,#e1ebf3)}
+header{height:52px;position:relative;display:flex;align-items:center;padding-inline:3%;overflow:hidden}
+header::after{content:"";position:absolute;inset:0 0 0 47.5%;background:linear-gradient(107deg,#132f4e,#143654);border-radius:0 0 0 38px}
+.brand{width:115px;height:auto;display:block}
+.shell{width:min(85.75%,1100px);margin-inline:auto}
+main{padding-block:22px 28px}
+.layout{display:grid;grid-template-columns:minmax(0,39.5%) minmax(0,1fr);column-gap:5%;align-items:start}
+.controls{grid-column:1;grid-row:1}
+h1{font-size:clamp(1rem,2vw,1.42rem);line-height:1.16;letter-spacing:.01em;margin:0 0 14px;padding-inline:8px}
+.card{background:#fffffff5;border:1px solid #e7edf2;border-radius:13px;padding:16px 20px;box-shadow:0 9px 28px #19375525}
+#setup-card{min-height:432px}
+h2{font-size:1.09rem;margin:0 0 6px}
+.hint{color:#263845;margin:0 0 18px;font-size:.83rem;line-height:1.35}
+#setup{--label-width:4.25rem;--field-gap:8px}
+.fields{display:grid;gap:9px;margin-top:20px}
+.option{display:grid;grid-template-columns:var(--label-width) minmax(0,1fr);align-items:center;gap:var(--field-gap);font-size:.77rem}
+.option span{white-space:nowrap}
+.option input{width:100%;height:29px;border:1px solid #aeb8bf;border-radius:8px;padding:4px 9px;font:inherit;color:var(--ink);background:#fff;text-transform:uppercase}
+.option input::placeholder{color:#677382}
+button{cursor:pointer;font:inherit;font-weight:700;border:0;border-radius:8px;padding:8px 12px;color:var(--ink);background:linear-gradient(105deg,#ffcd39,#ffca28)}
+button:hover:enabled{filter:brightness(1.07)}button:active:enabled{transform:translateY(1px)}
+button:disabled{opacity:.55;cursor:default}
+button.secondary{background:linear-gradient(125deg,#edf3f7,#e8f0f5);border:1px solid #697983}
+:focus-visible{outline:3px solid #276a9d;outline-offset:2px}
+.actions{margin:15px 0 0 calc(var(--label-width) + var(--field-gap));display:grid;gap:11px}
+.actions button{font-size:.76rem;font-weight:600;padding-block:6px;min-height:31px}
+.add-mark{font-size:1rem;line-height:0;vertical-align:middle;margin-left:3px}
+.stage{grid-column:2;grid-row:1;text-align:center;min-width:0;padding:37px 32px 0 0}
+.wheel{width:min(78%,440px);min-width:min(100%,270px);margin:0 auto 22px;position:relative;aspect-ratio:1;border-radius:50%;border:2px solid #be9443;padding:3.1%;background:conic-gradient(from 18deg,#fae4a0,#ffe6a0,#a87022,#e2c06b,#b4822e,#fff3b5,#fae4a0);box-shadow:0 0 0 3px #ffedb2a8,0 0 18px 8px #fff6d8,13px -3px 27px 8px #efcc686b,inset 0 0 0 3px #ffe4a163}
+canvas{display:block;width:100%;height:100%;border-radius:50%;outline:2px solid #926622}
+.pointer{position:absolute;z-index:2;left:50%;top:-5px;transform:translateX(-50%);width:35px;height:39px;background:linear-gradient(110deg,#ffefac,#af771c 72%,#fff4bc);clip-path:polygon(0 0,100% 0,50% 100%)}
+.pointer-label{position:absolute;z-index:1;left:50%;top:-37px;transform:translateX(-50%);min-width:70px;padding:3px 9px 6px;border-radius:48% 48% 19% 19% / 22% 22% 70% 70%;background:linear-gradient(#f7d575,#a9741e);color:#fff7d8;font-weight:900;font-size:1.16rem;text-shadow:0 1px 2px #5f3c0e}
+.hub{position:absolute;pointer-events:none;top:50%;left:50%;width:22%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;border:3px solid #f2d585;background:conic-gradient(from 18deg,#e8c363,#b3802b,#f7dc8d,#b78028,#e8c363);box-shadow:0 3px 7px #0008,inset 0 0 0 4px #f7da87b8}
+.spin{font-size:1.08rem;min-width:205px;padding-block:8px}.status{font-size:.9rem;font-weight:700;margin:5px 0 0;overflow-wrap:anywhere}
+.remaining{display:block;color:#495e73;margin-top:7px;font-size:.83rem}
+.results{grid-column:1 / -1;margin-top:18px}
+.results-head{display:flex;gap:12px;align-items:center;justify-content:space-between}
+.order{margin:8px 0 0;padding-left:27px;display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:5px 30px}
+.order li{padding:4px 0;overflow-wrap:anywhere}.order li::marker{font-weight:750;color:#795200}
+[hidden]{display:none}
+@media(max-width:700px){header::after{left:55%}.shell{width:calc(100% - 32px)}.layout{display:block}h1{padding:0}#setup-card{min-height:auto}.stage{padding:56px 0 0}.wheel{width:min(88%,370px);padding:3.1%}.results{margin-top:20px}}
+</style>
+</head>
+<body>
+<header><img class="brand" src="duoc.svg" alt="Duoc UC"></header>
+<main class="shell">
+<div class="layout">
+<div class="controls">
+<h1>RUEDA DE LA SUERTE DUOC UC</h1>
+<section class="card" id="setup-card" aria-labelledby="setup-heading">
+<h2 id="setup-heading">Ingrese opciones del sorteo</h2>
+<p class="hint" id="name-help">Escribe los nombres de tus alumnos para sortear su orden de exposición. También puedes pegar una lista.</p>
+<form id="setup">
+<div class="fields" id="names" role="group" aria-describedby="name-help"></div>
+<div class="actions">
+<button type="button" id="add">AGREGAR OPCIÓN <span class="add-mark" aria-hidden="true">+</span></button>
+<button class="secondary" id="generate">GENERAR RUEDA</button>
+</div>
+</form>
+</section>
+</div>
+<section class="stage" aria-label="Ruleta">
+<div class="wheel" aria-hidden="true">
+<div class="pointer-label">GIRE</div>
+<div class="pointer"></div>
+<canvas id="wheel" width="1000" height="1000"></canvas>
+<div class="hub"></div>
+</div>
+<button class="spin" id="spin" disabled>¡GIRAR AHORA!</button>
+<div class="remaining" id="remaining"></div>
+<p class="status" role="status" id="status"></p>
+</section>
+<section class="card results" id="results" hidden>
+<div class="results-head">
+<h2>Orden de exposición</h2>
+<button type="button" class="secondary" id="restart" disabled>Reiniciar sorteo</button>
+</div>
+<p class="hint" id="empty">Los alumnos sorteados aparecerán aquí en orden.</p>
+<ol class="order" id="order"></ol>
+</section>
+</div>
+</main>
+<script>
+"use strict";
+const get = id => document.getElementById(id);
+const canvas = get("wheel");
+const ctx = canvas.getContext("2d");
+const names = get("names");
+const add = get("add");
+const spin = get("spin");
+const restart = get("restart");
+const generate = get("generate");
+const order = get("order");
+const status = get("status");
+const circle = 2 * Math.PI;
+const colors = ["#0a2947", "#fbc431", "#154b73", "#f5f8fc"];
+const examples = ["Juan Pérez", "María González", "Pedro Soto", "Ana Díaz", "Carlos Ruiz"];
+const inputs = [];
+let roster = [];
+let pending = [];
+let angle = 0;
+let busy = false;
+
+function addOption() {
+  const index = inputs.length;
+  const label = document.createElement("label");
+  label.className = "option";
+  const caption = document.createElement("span");
+  caption.textContent = `Opción ${index + 1}`;
+  const input = document.createElement("input");
+  input.type = "text";
+  input.autocomplete = "off";
+  if (examples[index]) input.placeholder = examples[index];
+  label.append(caption, input);
+  names.append(label);
+  inputs.push(input);
+  return input;
+}
+
+for (const example of examples) addOption();
+add.addEventListener("click", () => addOption().focus());
+
+names.addEventListener("paste", event => {
+  const pasted = event.clipboardData.getData("text/plain").trim();
+  if (!pasted.includes("\n") && !pasted.includes("\r")) return;
+  const start = inputs.indexOf(event.target);
+  if (start < 0) return;
+  event.preventDefault();
+  const list = pasted.split(/\r\n?|\n/).map(name => name.trim()).filter(Boolean);
+  const emptyFields = inputs.slice(start + 1).filter(input => !input.value.trim());
+  list.forEach((name, index) => {
+    const input = index === 0 ? inputs[start] : emptyFields[index - 1] ?? addOption();
+    input.value = name;
+    if (index === list.length - 1) input.focus();
+  });
+});
+
+function draw() {
+  const labels = roster.length ? roster : Array(10).fill("");
+  const wedge = circle / labels.length;
+  ctx.clearRect(0, 0, 1000, 1000);
+  ctx.save();
+  ctx.translate(500, 500);
+  ctx.rotate(angle);
+  labels.forEach((label, index) => {
+    const start = -Math.PI / 2 + index * wedge;
+    const colorIndex = index === labels.length - 1 && index % 4 === 0 && index > 0 ? 2 : index % 4;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, 499, start, start + wedge + .0001);
+    ctx.closePath();
+    ctx.fillStyle = colors[colorIndex];
+    ctx.fill();
+    if (!label || labels.length > 100) return;
+    ctx.save();
+    ctx.rotate(start + wedge / 2);
+    const left = Math.cos(angle + start + wedge / 2) < 0;
+    ctx.translate(303, 0);
+    if (left) ctx.rotate(Math.PI);
+    const size = Math.min(48, Math.max(12, 1150 / labels.length));
+    ctx.font = `750 ${size}px system-ui`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = colorIndex % 2 ? "#10233a" : "#fff";
+    ctx.fillText(label, 0, 0, 315);
+    ctx.restore();
+  });
+  ctx.restore();
+  ctx.save();
+  ctx.translate(500, 500);
+  for (let index = 0; index < 24; index++) {
+    const mark = index * circle / 24;
+    ctx.beginPath();
+    ctx.arc(Math.cos(mark) * 484, Math.sin(mark) * 484, 5, 0, circle);
+    ctx.fillStyle = "#ffe9a4";
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function updateControls() {
+  spin.disabled = busy || pending.length === 0;
+  restart.disabled = busy || roster.length === 0;
+  generate.disabled = busy;
+  add.disabled = busy;
+  inputs.forEach(input => { input.disabled = busy; });
+  get("remaining").textContent = roster.length ? `${pending.length} de ${roster.length} por sortear` : "";
+}
+
+function startRound(list) {
+  roster = list;
+  pending = roster.map((_, index) => index);
+  angle = 0;
+  order.replaceChildren();
+  get("results").hidden = false;
+  get("empty").hidden = false;
+  status.textContent = "Todo listo para girar.";
+  draw();
+  updateControls();
+}
+
+get("setup").addEventListener("submit", event => {
+  event.preventDefault();
+  const list = inputs.map(input => input.value.trim()).filter(Boolean);
+  if (!list.length) {
+    status.textContent = "Escribe al menos un nombre.";
+    inputs[0].focus();
+    return;
+  }
+  startRound(list);
+});
+
+restart.addEventListener("click", () => startRound(roster));
+
+function randomIndex(count) {
+  const sample = new Uint32Array(1);
+  const range = 2 ** 32;
+  const limit = range - range % count;
+  do {
+    crypto.getRandomValues(sample);
+  } while (sample[0] >= limit);
+  return sample[0] % count;
+}
+
+spin.addEventListener("click", () => {
+  if (busy || !pending.length) return;
+  const pendingIndex = randomIndex(pending.length);
+  const winnerIndex = pending[pendingIndex];
+  const from = angle % circle;
+  const target = circle - (winnerIndex + .5) * circle / roster.length;
+  const travel = 5 * circle + (target - from + circle) % circle;
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  busy = true;
+  status.textContent = "Sorteando…";
+  updateControls();
+
+  function finish() {
+    pending.splice(pendingIndex, 1);
+    const winner = roster[winnerIndex];
+    const item = document.createElement("li");
+    item.textContent = winner;
+    order.append(item);
+    get("empty").hidden = true;
+    status.textContent = `Puesto ${order.children.length} · ${winner}${pending.length ? "" : " · Sorteo completo"}`;
+    busy = false;
+    angle = target;
+    draw();
+    updateControls();
+  }
+
+  if (reducedMotion) {
+    finish();
+    return;
+  }
+  const started = performance.now();
+  function frame(now) {
+    const progress = Math.min((now - started) / 2900, 1);
+    angle = from + travel * (1 - (1 - progress) ** 4);
+    draw();
+    if (progress < 1) requestAnimationFrame(frame);
+    else setTimeout(finish, 750);
+  }
+  requestAnimationFrame(frame);
+});
+
+draw();
+updateControls();
+</script>
+</body>
+</html>
